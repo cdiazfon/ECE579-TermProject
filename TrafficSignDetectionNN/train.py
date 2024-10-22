@@ -30,6 +30,7 @@ def main():
 
     #plot_images(X_train, y_train)
     #Test comment
+    #Branch test 1
     # TODO: need to convert image vectors into pytorch arrays
     # TODO: create neural network dimensions
     # TODO: set learning hyperparameters e.g(learning rate, epochs, batch size)
