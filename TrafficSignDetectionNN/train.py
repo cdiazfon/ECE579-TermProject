@@ -15,7 +15,7 @@ def plot_images(images, labels, num_images=9):
         plt.axis('off')
     plt.show()
 
-def main():
+def train_model(model):
     print("Loading data...")
     dir_path = os.path.dirname(os.path.realpath(__file__))
     print(dir_path)
@@ -25,12 +25,6 @@ def main():
 
     X_train, X_test, y_train, y_test = images4['x_train'], images4['x_test'], images4['y_train'], images4['y_test']
 
-    # for image in X_train:
-    #     print(image)
-
-    #plot_images(X_train, y_train)
-    #Test comment
-    #Branch test 1
     # TODO: need to convert image vectors into pytorch arrays
     # TODO: create neural network dimensions
     # TODO: set learning hyperparameters e.g(learning rate, epochs, batch size)
@@ -41,11 +35,4 @@ def main():
     # TODO: webcam detection system, opencv?
     # TODO: figure out how to use NN in real time with webcam
     # TODO: print out label to command line
-
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    main()
-
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
