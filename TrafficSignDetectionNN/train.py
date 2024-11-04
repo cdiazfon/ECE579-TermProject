@@ -3,6 +3,8 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 def plot_images(images, labels, num_images=9):
@@ -15,15 +17,22 @@ def plot_images(images, labels, num_images=9):
         plt.axis('off')
     plt.show()
 
-def train_model(model):
+
+def train_model():
+    # print("Training model...")
     print("Loading data...")
     dir_path = os.path.dirname(os.path.realpath(__file__))
     print(dir_path)
-    file_dir = os.path.join(dir_path, "data\\data4.pickle")
+    file_dir = os.path.join(dir_path, "data\\data8.pickle")
     imagesfrompkl = open(file_dir, "rb")
-    images4 = pickle.load(imagesfrompkl)
+    images = pickle.load(imagesfrompkl)
 
-    X_train, X_test, y_train, y_test = images4['x_train'], images4['x_test'], images4['y_train'], images4['y_test']
+    X_train, X_test, y_train, y_test = images['x_train'], images['x_test'], images['y_train'], images['y_test']
+
+
+
+    #model.fit(X_train, y_train)
+
 
     # TODO: need to convert image vectors into pytorch arrays
     # TODO: create neural network dimensions
@@ -35,4 +44,5 @@ def train_model(model):
     # TODO: webcam detection system, opencv?
     # TODO: figure out how to use NN in real time with webcam
     # TODO: print out label to command line
+
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
