@@ -1,9 +1,11 @@
-from torch.jit import _script as optim
-
 from train import train_model
+import torchvision
 import torch
+from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as nnFunc
+from torch.utils.data import Dataset
+
 import pandas as pd
 
 import os
@@ -14,7 +16,6 @@ import pickle
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-#Test Comment for git commit and push
 
 def loadall(filename):
     with open(filename, "rb") as f:
@@ -24,6 +25,29 @@ def loadall(filename):
             except EOFError:
                 break
 
+
+class ImageDataset(Dataset):
+
+    def __init__(self, x_train, y_train, transform=None):
+        self.x_train = x_train
+        self.y_train = y_train
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.x_train)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        x = self.x_train[idx]
+        y = self.y_train[idx]
+
+        if self.transform:
+            x = self.transform(x)
+            y = self.transform(y)
+
+        return x, y
 
 
 class Network(nn.Module):
@@ -90,44 +114,40 @@ class Network(nn.Module):
     def get_stack(self):
         return self.stack
 
-# def train_model(model):
-#     criterion = nn.CrossEntropyLoss()
-#     optimizer = optim
-#     model.train()
 
 def main():
 
-    #define hyperparameters
+    # define hyperparameters
     epochs = 100
-    batch_size = 256
+    batch_size = 8
     learning_rate = 1
 
-    #load data from pickle file
+    # load data from pickle file
     dir_path = os.path.dirname(os.path.realpath(__file__))
     # print(dir_path)
     file_dir = os.path.join(dir_path, "data\\data8.pickle")
-    imagesfrompkl = open(file_dir, "rb")
-    images = pickle.load(imagesfrompkl)
+    images_from_pkl = open(file_dir, "rb")
+    images = pickle.load(images_from_pkl)
 
-    train_items = loadall(imagesfrompkl)
+    # train_items = loadall(imagesfrompkl)
 
-    #X_train, X_test, y_train, y_test = images['x_train'], images['x_test'], images['y_train'], images['y_test']
+    x_train, x_test, y_train, y_test = images['x_train'], images['x_test'], images['y_train'], images['y_test']
 
-    train_dataset_from_loader = torch.utils.data.DataLoader(train_items, batch_size=batch_size)
+    images_for_training = ImageDataset(x_train, y_train,
+                                       transform=torchvision.transforms.Compose([torchvision.transforms.ToTensor()]))
+    image_loader = torch.utils.data.DataLoader(images_for_training, batch_size=8, shuffle=True, num_workers=0)
 
     net = Network()
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
     # record data for determining performance of network
-    perf_metrics = pd.DataFrame(columns=['epoch', 'loss','Accuracy','Precision','Recall'])
-
-
+    perf_metrics = pd.DataFrame(columns=['epoch', 'loss', 'Accuracy', 'Precision', 'Recall'])
 
     for i in range(epochs):
         net.train()
 
-        for j, (inputs, true_class) in train_dataset_from_loader:
+        for j, (inputs, true_class) in image_loader:
             # Begin forward pass
             output = net(inputs)
             loss = loss_fn(output, true_class)
@@ -144,11 +164,6 @@ def main():
     # print(params[0].size())  # conv1's .weight
     #
     # input = torch.randn(1, 1, 32, 32)
-
-
-
-    out = net(input)
-    print(out)
 
     net.zero_grad()
     out.backward(torch.randn(1, 10))
