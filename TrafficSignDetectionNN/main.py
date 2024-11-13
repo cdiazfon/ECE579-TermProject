@@ -1,3 +1,5 @@
+import numpy as np
+
 from train import train_model
 import torchvision
 import torch
@@ -5,6 +7,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as nnFunc
 from torch.utils.data import Dataset
+import matplotlib.pyplot as plt
 
 import pandas as pd
 
@@ -30,7 +33,7 @@ class ImageDataset(Dataset):
 
     def __init__(self, x_train, y_train, transform=None):
         self.x_train = x_train
-        self.y_train = y_train
+        self.y_train = np.array(y_train)
         self.transform = transform
 
     def __len__(self):
@@ -45,7 +48,7 @@ class ImageDataset(Dataset):
 
         if self.transform:
             x = self.transform(x)
-            y = self.transform(y)
+            #y = self.transform(y)
 
         return x, y
 
@@ -53,13 +56,12 @@ class ImageDataset(Dataset):
 class Network(nn.Module):
     def __init__(self):
         super(Network, self).__init__()
-        # parameters: 1 input image channel, 6 output channels, 3x3 square convolution kernel
-        self.conv1 = nn.Conv2d(1,6, 5)
+        # parameters: 32 input image channel, 6 output channels, 3x3 square convolution kernel
+        self.conv1 = nn.Conv2d(1, 6, 2)
         # second convolution operation, 6 inputs,  16 outputs, 5x5 square convolution kernel
         self.conv2 = nn.Conv2d(6, 16, 5)
 
         #fully connected layers
-
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
@@ -108,14 +110,20 @@ class Network(nn.Module):
 
         return output
 
-            # self.flatten(x)
-            # return self.stack(x)
-
     def get_stack(self):
         return self.stack
 
 
 def main():
+
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+    print(f"Using {device} device")
 
     # define hyperparameters
     epochs = 100
@@ -129,33 +137,43 @@ def main():
     images_from_pkl = open(file_dir, "rb")
     images = pickle.load(images_from_pkl)
 
-    # train_items = loadall(imagesfrompkl)
-
     x_train, x_test, y_train, y_test = images['x_train'], images['x_test'], images['y_train'], images['y_test']
 
+    #this transform might be wrong
     images_for_training = ImageDataset(x_train, y_train,
                                        transform=torchvision.transforms.Compose([torchvision.transforms.ToTensor()]))
     image_loader = torch.utils.data.DataLoader(images_for_training, batch_size=8, shuffle=True, num_workers=0)
 
-    net = Network()
+    #net = Network()
+
+    model = Network().to(device)
+    print(model)
+
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # record data for determining performance of network
     perf_metrics = pd.DataFrame(columns=['epoch', 'loss', 'Accuracy', 'Precision', 'Recall'])
 
     for i in range(epochs):
-        net.train()
+        print(f"Epoch {i+1}\n-------------------------------")
+        size = len(image_loader)
+        model.train()
 
-        for j, (inputs, true_class) in image_loader:
+        for j, (inputs, true_class) in enumerate(image_loader):
             # Begin forward pass
-            output = net(inputs)
-            loss = loss_fn(output, true_class)
+            pred_output = model(inputs)
+            loss = loss_fn(pred_output, true_class)
 
             # Begin backward pass
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
+
+            loss, current = loss.item(), j * batch_size + len(inputs)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+    print("Finished training")
 
     # print(net)
     #
@@ -164,9 +182,9 @@ def main():
     # print(params[0].size())  # conv1's .weight
     #
     # input = torch.randn(1, 1, 32, 32)
-
-    net.zero_grad()
-    out.backward(torch.randn(1, 10))
+    #
+    # net.zero_grad()
+    # out.backward(torch.randn(1, 10))
 
 
 
