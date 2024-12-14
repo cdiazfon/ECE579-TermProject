@@ -56,23 +56,15 @@ class ImageDataset(Dataset):
 class Network(nn.Module):
     def __init__(self):
         super(Network, self).__init__()
-        # parameters: 32 input image channel, 6 output channels, 3x3 square convolution kernel
-        self.conv1 = nn.Conv2d(1, 6, 2)
+        # parameters: 1 image channel, 6 output channels, 3x3 square convolution kernel
+        self.conv1 = nn.Conv2d(1, 6, 3)
         # second convolution operation, 6 inputs,  16 outputs, 5x5 square convolution kernel
         self.conv2 = nn.Conv2d(6, 16, 5)
 
         #fully connected layers
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-        # self.flatten = nn.Flatten()
-        # self.stack = nn.Sequential(
-        #     nn.Linear(36, 40),
-        #     nn.ReLU(),
-        #     nn.Linear(40, 40),
-        #     nn.Sigmoid()
-        #)
+        self.fc3 = nn.Linear(84, 43)
 
     def forward(self, x):
         # Convolution layer C1: 1 input image channel, 6 output channels,
@@ -127,7 +119,7 @@ def main():
 
     # define hyperparameters
     epochs = 100
-    batch_size = 8
+    batch_size = 4
     learning_rate = 1
 
     # load data from pickle file
@@ -142,7 +134,7 @@ def main():
     #this transform might be wrong
     images_for_training = ImageDataset(x_train, y_train,
                                        transform=torchvision.transforms.Compose([torchvision.transforms.ToTensor()]))
-    image_loader = torch.utils.data.DataLoader(images_for_training, batch_size=8, shuffle=True, num_workers=0)
+    train_image_loader = torch.utils.data.DataLoader(images_for_training, batch_size=8, shuffle=True, num_workers=0)
 
     #net = Network()
 
@@ -157,10 +149,10 @@ def main():
 
     for i in range(epochs):
         print(f"Epoch {i+1}\n-------------------------------")
-        size = len(image_loader)
+        size = len(train_image_loader)
         model.train()
 
-        for j, (inputs, true_class) in enumerate(image_loader):
+        for j, (inputs, true_class) in enumerate(train_image_loader):
             # Begin forward pass
             pred_output = model(inputs)
             loss = loss_fn(pred_output, true_class)
